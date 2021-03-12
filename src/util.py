@@ -310,7 +310,7 @@ def get_experimental_X_y(random_state=1, train_size=5000, return_test=False, ret
     and adds measurement noise"""
     df = pd.read_csv('data/gfp_data.csv')
     X,_ = get_gfp_X_y_aa(df, large_only=True, ignore_stops=True)
-    y_gt = np.load("../data/gfp_gt_evals.npy")
+    y_gt = np.load("data/gfp_gt_evals.npy")
     if return_test:
         X_train, gt_train, X_test, gt_test = partition_data(X, y_gt, percentile=20, train_size=train_size, random_state=random_state, return_test=return_test)
         np.random.seed(random_state)
