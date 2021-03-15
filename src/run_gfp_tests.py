@@ -93,11 +93,11 @@ def train_experimental_vaes():
                   epochs=100,
                   batch_size=10,
                   verbose=2)
-        vae_0.encoder_.save_weights("../models/vae_0_encoder_weights%s_%i.h5" %
+        vae_0.encoder_.save_weights("models/vae_0_encoder_weights%s_%i.h5" %
                                     (suffix, RANDOM_STATE))
-        vae_0.decoder_.save_weights("../models/vae_0_decoder_weights%s_%i.h5" %
+        vae_0.decoder_.save_weights("models/vae_0_decoder_weights%s_%i.h5" %
                                     (suffix, RANDOM_STATE))
-        vae_0.vae_.save_weights("../models/vae_0_vae_weights%s_%i.h5" %
+        vae_0.vae_.save_weights("models/vae_0_vae_weights%s_%i.h5" %
                                 (suffix, RANDOM_STATE))
 
 
@@ -133,12 +133,12 @@ def train_experimental_pred_vaes():
                      validation_split=0,
                      verbose=2)
         suffix = "_%s_%i" % (train_size_str, RANDOM_STATE)
-        pred_vae.encoder_.save_weights(
-            "../models/pred_vae_encoder_weights%s.h5" % suffix)
-        pred_vae.decoder_.save_weights(
-            "../models/pred_vae_decoder_weights%s.h5" % suffix)
+        pred_vae.encoder_.save_weights("models/pred_vae_encoder_weights%s.h5" %
+                                       suffix)
+        pred_vae.decoder_.save_weights("models/pred_vae_decoder_weights%s.h5" %
+                                       suffix)
         pred_vae.predictor_.save_weights(
-            "../models/pred_vae_predictor_weights%s.h5" % suffix)
+            "models/pred_vae_predictor_weights%s.h5" % suffix)
         pred_vae.vae_.save_weights("../models/pred_vae_vae_weights%s.h5" %
                                    suffix)
 
@@ -164,11 +164,11 @@ def run_experimental_weighted_ml(it, repeats=3):
                       seq_length=X_train.shape[1],
                       enc1_units=50)
 
-    vae_0.encoder_.load_weights("../models/vae_0_encoder_weights%s.h5" %
+    vae_0.encoder_.load_weights("models/vae_0_encoder_weights%s.h5" %
                                 vae_suffix)
-    vae_0.decoder_.load_weights("../models/vae_0_decoder_weights%s.h5" %
+    vae_0.decoder_.load_weights("models/vae_0_decoder_weights%s.h5" %
                                 vae_suffix)
-    vae_0.vae_.load_weights("../models/vae_0_vae_weights%s.h5" % vae_suffix)
+    vae_0.vae_.load_weights("models/vae_0_vae_weights%s.h5" % vae_suffix)
 
     ground_truth = gfp_gp.SequenceGP(load=True, load_prefix="data/gfp_gp")
 
@@ -176,8 +176,8 @@ def run_experimental_weighted_ml(it, repeats=3):
     keras.utils.generic_utils.get_custom_objects().update(
         {"neg_log_likelihood": loss})
     oracles = [
-        keras.models.load_model("../models/oracle_%i%s.h5" %
-                                (i, oracle_suffix)) for i in range(num_models)
+        keras.models.load_model("models/oracle_%i%s.h5" % (i, oracle_suffix))
+        for i in range(num_models)
     ]
 
     test_kwargs = [{
@@ -241,14 +241,13 @@ def run_experimental_weighted_ml(it, repeats=3):
                 kwargs.update(base_kwargs)
                 test_traj, test_oracle_samples, test_gt_samples, test_max = optimization_algs.weighted_ml_opt(
                     np.copy(X_train), oracles, ground_truth, vae_0, **kwargs)
-            np.save('../results/%s_traj%s.npy' % (test_name, suffix),
-                    test_traj)
-            np.save('../results/%s_oracle_samples%s.npy' % (test_name, suffix),
+            np.save('results/%s_traj%s.npy' % (test_name, suffix), test_traj)
+            np.save('results/%s_oracle_samples%s.npy' % (test_name, suffix),
                     test_oracle_samples)
-            np.save('../results/%s_gt_samples%s.npy' % (test_name, suffix),
+            np.save('results/%s_gt_samples%s.npy' % (test_name, suffix),
                     test_gt_samples)
 
-            with open('../results/%s_max%s.json' % (test_name, suffix),
+            with open('results/%s_max%s.json' % (test_name, suffix),
                       'w') as outfile:
                 json.dump(test_max, outfile)
 
@@ -307,7 +306,7 @@ def run_killoran(killoran=True):
                                                                adam=False)
 
             np.save(
-                "../results/mala_results_%s_%i.npy" %
+                "results/mala_results_%s_%i.npy" %
                 (train_size_str, RANDOM_STATE), results)
             suffix = "_%s_%i" % (train_size_str, RANDOM_STATE)
             with open('results/%s_max%s.json' % ('mala', suffix),
@@ -327,10 +326,10 @@ def run_killoran(killoran=True):
                                                                verbose=False,
                                                                adam=True)
             np.save(
-                "../results/killoran_may_results_%s_%i.npy" %
+                "results/killoran_may_results_%s_%i.npy" %
                 (train_size_str, RANDOM_STATE), results)
             suffix = "_%s_%i" % (train_size_str, RANDOM_STATE)
-            with open('../results/%s_max%s.json' % ('killoran', suffix),
+            with open('results/%s_max%s.json' % ('killoran', suffix),
                       'w') as outfile:
                 json.dump(test_max, outfile)
 
@@ -373,7 +372,7 @@ def run_gomez_bombarelli(constrained=True):
             ground_truth,
             total_it=1000,
             constrained=constrained)
-        with open('../results/%s_max%s.json' % ('bombarelli', suffix),
+        with open('results/%s_max%s.json' % ('bombarelli', suffix),
                   'w') as outfile:
             json.dump(test_max, outfile)
 
