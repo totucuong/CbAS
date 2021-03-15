@@ -356,14 +356,13 @@ def run_gomez_bombarelli(constrained=True):
                                              pred_var=gt_var)
         suffix = "_%s_%i" % (train_size_str, RANDOM_STATE)
 
-        pred_vae.encoder_.load_weights(
-            "../models/pred_vae_encoder_weights%s.h5" % suffix)
-        pred_vae.decoder_.load_weights(
-            "../models/pred_vae_decoder_weights%s.h5" % suffix)
+        pred_vae.encoder_.load_weights("models/pred_vae_encoder_weights%s.h5" %
+                                       suffix)
+        pred_vae.decoder_.load_weights("models/pred_vae_decoder_weights%s.h5" %
+                                       suffix)
         pred_vae.predictor_.load_weights(
-            "../models/pred_vae_predictor_weights%s.h5" % suffix)
-        pred_vae.vae_.load_weights("../models/pred_vae_vae_weights%s.h5" %
-                                   suffix)
+            "models/pred_vae_predictor_weights%s.h5" % suffix)
+        pred_vae.vae_.load_weights("models/pred_vae_vae_weights%s.h5" % suffix)
         if not constrained:
             suffix = "_unconstrained" + suffix
         bomb_results, test_max = optimization_algs.bombarelli_opt(
