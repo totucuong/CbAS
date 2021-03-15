@@ -1,11 +1,10 @@
-import keras
+from tensorflow import keras
 import numpy as np
-from keras import backend as K
-from keras.callbacks import Callback
-from keras.layers import Layer, Input, Lambda, Add, Multiply, Dense, Flatten, Concatenate, Reshape, Conv1D
-from keras.models import Model
-from keras import layers
-
+from tensorflow.keras import backend as K
+from tensorflow.keras.callbacks import Callback
+from tensorflow.keras.layers import Layer, Input, Lambda, Add, Multiply, Dense, Flatten, Concatenate, Reshape, Conv1D
+from tensorflow.keras.models import Model
+from tensorflow.keras import layers
 """
 Module for extendable variational autoencoders.
 
@@ -15,7 +14,6 @@ Some code adapted from Louis Tiao's blog: http://louistiao.me/
 
 class KLDivergenceLayer(Layer):
     """ Add KL divergence in latent layer to loss """
-
     def __init__(self, *args, **kwargs):
         self.is_placeholder = True
         super(KLDivergenceLayer, self).__init__(*args, **kwargs)
@@ -41,7 +39,6 @@ class KLScaleUpdate(Callback):
     KL loss. This class implements a sigmoidal growth, as in Bowman, et. al.
 
     """
-
     def __init__(self, scale, growth=0.01, start=0.001, verbose=True):
         super(KLScaleUpdate, self).__init__()
         self.scale_ = scale
@@ -69,7 +66,6 @@ class BaseVAE(object):
     models via a Model representing the latent space
 
     """
-
     def __init__(self, input_shape, latent_dim, *args, **kwargs):
         self.latentDim_ = latent_dim
         self.inputShape_ = input_shape
@@ -124,17 +120,20 @@ class BaseVAE(object):
         """
 
         # mu_z, log_var_z, kl_batch  = KLDivergenceLayer()([mu_z, log_var_z], scale=kl_scale)
-        lmda_func = lambda inputs: -0.5 * K.sum(1 + inputs[1] - K.square(inputs[0]) - K.exp(inputs[1]), axis=1)
+        lmda_func = lambda inputs: -0.5 * K.sum(
+            1 + inputs[1] - K.square(inputs[0]) - K.exp(inputs[1]), axis=1)
 
         kl_batch = Lambda(lmda_func, name='kl_calc')([mu_z, log_var_z])
-        kl_batch = Reshape((1,), name='kl_reshape')(kl_batch)
+        kl_batch = Reshape((1, ), name='kl_reshape')(kl_batch)
 
         # get standard deviation from log variance:
         sigma_z = Lambda(lambda lv: K.exp(0.5 * lv))(log_var_z)
 
         # re-parametrization trick ( z = mu_z + eps * sigma_z)
-        eps = Input(tensor=K.random_normal(stddev=epsilon_std,
-                                           shape=(K.shape(mu_z)[0], self.latentDim_)))
+        eps = Input(tensor=K.random_normal(
+            stddev=epsilon_std, shape=(K.shape(mu_z)[0], self.latentDim_)))
+        # eps = K.random_normal(stddev=epsilon_std,
+        #                       shape=(K.shape(mu_z)[0], self.latentDim_))
 
         eps_z = Multiply()([sigma_z, eps])  # scale by epsilon sample
         z = Add()([mu_z, eps_z])
@@ -162,10 +161,15 @@ class BaseVAE(object):
 
         enc_in = self.encoder_.inputs
         mu_z, log_var_z = self.encoder_.outputs
-        z, eps, kl_batch = self._build_latent_vars(mu_z, log_var_z, epsilon_std=epsilon_std, kl_scale=kl_scale)
+        z, eps, kl_batch = self._build_latent_vars(mu_z,
+                                                   log_var_z,
+                                                   epsilon_std=epsilon_std,
+                                                   kl_scale=kl_scale)
         dec_in = self._get_decoder_input(z, enc_in)
         x_pred = self.decoder_(dec_in)
-        self.vae_ = Model(inputs=enc_in + [eps], outputs=[x_pred, kl_batch], name='vae_base')
+        self.vae_ = Model(inputs=enc_in + [eps],
+                          outputs=[x_pred, kl_batch],
+                          name='vae_base')
 
     def plot_model(self, *args, **kwargs):
         keras.utils.plot_model(self.vae_, *args, **kwargs)
@@ -197,12 +201,18 @@ class BaseVAE(object):
 
 class BaseSupervisedVAE(BaseVAE):
     """ Base class for VAEs that also make predictions from the latent space """
-
-    def __init__(self, input_shape, latent_dim, pred_dim,
-                 learn_uncertainty=False, pred_var=0.1, *args, **kwargs):
+    def __init__(self,
+                 input_shape,
+                 latent_dim,
+                 pred_dim,
+                 learn_uncertainty=False,
+                 pred_var=0.1,
+                 *args,
+                 **kwargs):
         super(BaseSupervisedVAE, self).__init__(input_shape=input_shape,
                                                 latent_dim=latent_dim,
-                                                *args, **kwargs)
+                                                *args,
+                                                **kwargs)
         self.predDim_ = pred_dim
         self.predictor_ = None
         self.learnUncertainty_ = learn_uncertainty
@@ -243,11 +253,16 @@ class BaseSupervisedVAE(BaseVAE):
 
         enc_in = self.encoder_.inputs
         mu_z, log_var_z = self.encoder_.outputs
-        z, eps, kl_batch = self._build_latent_vars(mu_z, log_var_z, epsilon_std=epsilon_std, kl_scale=kl_scale)
+        z, eps, kl_batch = self._build_latent_vars(mu_z,
+                                                   log_var_z,
+                                                   epsilon_std=epsilon_std,
+                                                   kl_scale=kl_scale)
         dec_in = self._get_decoder_input(z, enc_in)
         x_pred = self.decoder_(dec_in)
         y_pred, y_log_var = self.predictor_(dec_in)
-        self.vae_ = Model(inputs=enc_in + [eps], outputs=[x_pred, kl_batch, y_pred, y_log_var], name='vae_pred')
+        self.vae_ = Model(inputs=[enc_in, eps],
+                          outputs=[x_pred, kl_batch, y_pred, y_log_var],
+                          name='vae_pred')
 
     def save_all_weights(self, prefix):
         super(BaseSupervisedVAE, self).save_all_weights(prefix)
@@ -262,11 +277,11 @@ class BaseSupervisedVAE(BaseVAE):
 
 class SimpleVAE(BaseVAE):
     """ Basic VAE where the encoder and decoder can be constructed from lists of layers """
-
     def __init__(self, input_shape, latent_dim, flatten=True, *args, **kwargs):
         super(SimpleVAE, self).__init__(input_shape=input_shape,
                                         latent_dim=latent_dim,
-                                        *args, **kwargs)
+                                        *args,
+                                        **kwargs)
         self.flatten_ = flatten
         self.encoderLayers_ = []
         self.decoderLayers_ = []
@@ -285,7 +300,7 @@ class SimpleVAE(BaseVAE):
         return [x]
 
     def _build_decoder_inputs(self):
-        z = Input(shape=(self.latentDim_,))
+        z = Input(shape=(self.latentDim_, ))
         return z
 
     def _edit_encoder_inputs(self, enc_in):
@@ -317,7 +332,9 @@ class SimpleVAE(BaseVAE):
         mu_z = Dense(self.latentDim_, name='mu_z')(h)
         log_var_z = Dense(self.latentDim_, name='log_var_z')(h)
 
-        self.encoder_ = Model(inputs=enc_in, outputs=[mu_z, log_var_z], name='encoder')
+        self.encoder_ = Model(inputs=enc_in,
+                              outputs=[mu_z, log_var_z],
+                              name='encoder')
 
     def build_decoder(self, decode_activation):
         """ Construct the decoder from list of layers
@@ -344,13 +361,18 @@ class SimpleVAE(BaseVAE):
 
 class SimpleSupervisedVAE(SimpleVAE, BaseSupervisedVAE):
     """ Supervised VAE where the predictor, encoder and decoder can be built from a list of layers """
-
-    def __init__(self, input_shape, latent_dim, pred_dim, pred_var=0.1, learn_uncertainty=False):
-        super(SimpleSupervisedVAE, self).__init__(input_shape=input_shape,
-                                                  latent_dim=latent_dim,
-                                                  pred_var=pred_var,
-                                                  pred_dim=pred_dim,
-                                                  learn_uncertainty=learn_uncertainty)
+    def __init__(self,
+                 input_shape,
+                 latent_dim,
+                 pred_dim,
+                 pred_var=0.1,
+                 learn_uncertainty=False):
+        super(SimpleSupervisedVAE,
+              self).__init__(input_shape=input_shape,
+                             latent_dim=latent_dim,
+                             pred_var=pred_var,
+                             pred_dim=pred_dim,
+                             learn_uncertainty=learn_uncertainty)
         self.predictorLayers_ = []
 
     def add_predictor_layer(self, layer):
@@ -376,25 +398,24 @@ class SimpleSupervisedVAE(SimpleVAE, BaseSupervisedVAE):
         for hid in self.predictorLayers_:
             h = hid(h)
 
-        y_pred = Dense(units=self.predDim_,
-                       activation=predict_activation)(h)
+        y_pred = Dense(units=self.predDim_, activation=predict_activation)(h)
         log_var_y = Dense(self.predDim_, name='log_var_y')(h)
 
         if not self.learnUncertainty_:
-            log_var_y = Lambda(lambda lv: 0 * lv + K.ones_like(lv) * K.log(K.variable(self.predVar_)))(log_var_y)
+            log_var_y = Lambda(lambda lv: 0 * lv + K.ones_like(lv) * K.log(
+                K.variable(self.predVar_)))(log_var_y)
 
-        self.predictor_ = Model(inputs=pred_in, outputs=[y_pred, log_var_y], name='predictor')
+        self.predictor_ = Model(inputs=pred_in,
+                                outputs=[y_pred, log_var_y],
+                                name='predictor')
 
     def build_vae(self, epsilon_std=1., kl_scale=1.):
-        BaseSupervisedVAE.build_vae(self, epsilon_std=epsilon_std, kl_scale=kl_scale)
+        BaseSupervisedVAE.build_vae(self,
+                                    epsilon_std=epsilon_std,
+                                    kl_scale=kl_scale)
 
     def save_all_weights(self, prefix):
         BaseSupervisedVAE.save_all_weights(self, prefix)
 
     def load_all_weughts(self, prefix):
         BaseSupervisedVAE.load_all_weights(self, prefix)
-
-
-
-
-
